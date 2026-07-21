@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Screening Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a; --card-bg: rgba(30, 41, 59, 0.75);
+            --accent-blue: #38bdf8; --accent-purple: #818cf8;
+            --accent-green: #34d399; --accent-yellow: #fbbf24;
+            --text-main: #f8fafc; --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+
+        body {
+            background-color: var(--bg-dark); color: var(--text-main);
+            min-height: 100vh; padding: 2rem;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(129, 140, 248, 0.15) 0px, transparent 50%);
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);
+        }
+
+        h1 {
+            font-size: 1.8rem; font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .header-actions { display: flex; gap: 1rem; }
+
+        button {
+            background: rgba(255, 255, 255, 0.1); color: var(--text-main);
+            border: 1px solid var(--border-color); padding: 0.5rem 1rem;
+            border-radius: 0.5rem; font-weight: 600; cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        button:hover { background: rgba(255, 255, 255, 0.2); }
+        .btn-primary { background: var(--accent-blue); color: #000; border: none; }
+        .btn-primary:hover { background: #0284c7; }
+
+        .grid { display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem; }
+
+        .card {
+            background: var(--card-bg); backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color); border-radius: 1rem;
+            padding: 1.5rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; }
+        .jd-box { background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 1rem; font-size: 0.9rem; line-height: 1.6; color: var(--text-muted); white-space: pre-line; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+        th, td { text-align: left; padding: 0.85rem 1rem; border-bottom: 1px solid var(--border-color); }
+        th { font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); }
+        td { font-size: 0.85rem; }
+
+        .score-bar { height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 4px; width: 80px; display: inline-block; vertical-align: middle; margin-left: 0.4rem; }
+        .score-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent-blue), var(--accent-green)); width: 0%; transition: width 1s ease-out; }
+        
+        .rank-badge { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: rgba(255, 255, 255, 0.1); font-weight: 700; font-size: 0.8rem; }
+        .rank-1 { background: #f59e0b; color: #000; box-shadow: 0 0 10px rgba(245, 158, 11, 0.5); }
+        .rank-2 { background: #94a3b8; color: #000; }
+        .rank-3 { background: #b45309; color: #fff; }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px);
+            display: none; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal {
+            background: var(--bg-dark); border: 1px solid var(--border-color);
+            border-radius: 1rem; padding: 2rem; max-width: 500px; width: 90%;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+        .modal h2 { margin-bottom: 1rem; color: var(--accent-blue); }
+        .modal p { color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1rem; }
+        .close-btn { margin-top: 1rem; width: 100%; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1>AI Resume Screening Dashboard</h1>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.2rem;">Dynamic TF-IDF + AI Semantic Reasoning</p>
+        </div>
+        <div class="header-actions">
+            <button onclick="openModal('aboutModal')">ℹ️ About Project</button>
+            <button class="btn-primary" onclick="openModal('addModal')">+ Add Candidate</button>
+        </div>
+    </header>
+
+    <div class="grid">
+        <div class="card">
+            <div class="card-title">Target Job Description (`jd.txt`)</div>
+            <div id="jd-container" class="jd-box">Loading Job Description...</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Live Candidate Rankings</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rank</th><th>Candidate PDF</th><th>NLP Score</th><th>Final Score</th><th>AI Reasoning</th>
+                    </tr>
+                </thead>
+                <tbody id="candidate-rows">
+                    <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Loading candidates...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- About Project Modal -->
+<div class="modal-overlay" id="aboutModal">
+    <div class="modal">
+        <h2>About This AI Agent</h2>
+        <p>This project is a <strong>Hybrid AI Resume Screener</strong> built for the Junior AI Research Associate challenge.</p>
+        <p><strong>1. Mathematical Baseline:</strong> It extracts text from PDFs and runs a Scikit-Learn TF-IDF Cosine Similarity algorithm to check exact keyword matches.</p>
+        <p><strong>2. Semantic Reasoning:</strong> It sends the baseline score and text to an LLM (or a local smart fallback engine) to evaluate transferable skills and gaps.</p>
+        <p>This ensures no AI hallucinations while maintaining deep context understanding.</p>
+        <button class="close-btn" onclick="closeModal('aboutModal')">Close</button>
+    </div>
+</div>
+
+<!-- Add Candidate Modal -->
+<div class="modal-overlay" id="addModal">
+    <div class="modal">
+        <h2>Add a New Candidate</h2>
+        <p>This dashboard operates as a secure, local CLI-first application. To process a new resume:</p>
+        <ol style="color: var(--text-muted); font-size: 0.95rem; margin-left: 1.5rem; margin-bottom: 1rem; line-height: 1.6;">
+            <li>Drag and drop the candidate's PDF into the <code>resumes/</code> folder on your computer.</li>
+            <li>Open your terminal and run <code>python agent.py</code></li>
+            <li>Refresh this page to see the updated live rankings.</li>
+        </ol>
+        <button class="close-btn btn-primary" onclick="closeModal('addModal')">Understood</button>
+    </div>
+</div>
+
+<!-- Load data.js fallback for double-click file:// support -->
+<script src="data.js"></script>
+<script>
+    // Modal Logic
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    // Load Data Logic
+    async function loadDashboard() {
+        let jdText = window.JD_TEXT || "";
+        let candidates = window.RANKED_CANDIDATES || null;
+
+        try {
+            const jdResponse = await fetch('jd.txt');
+            if (jdResponse.ok) jdText = await jdResponse.text();
+
+            const resultsResponse = await fetch('ranked_candidates.json');
+            if (resultsResponse.ok) candidates = await resultsResponse.json();
+        } catch (err) {}
+
+        if (jdText) document.getElementById('jd-container').innerText = jdText;
+
+        if (candidates && candidates.length > 0) {
+            const tbody = document.getElementById('candidate-rows');
+            tbody.innerHTML = '';
+
+            candidates.forEach((cand, index) => {
+                const rank = index + 1;
+                const score = cand.Final_LLM_Score || cand.NLP_Similarity_Score;
+                const rankClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : '';
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><span class="rank-badge ${rankClass}">${rank}</span></td>
+                    <td><strong>${cand.Candidate}</strong></td>
+                    <td>${cand.NLP_Similarity_Score}%</td>
+                    <td>
+                        <strong style="color: var(--accent-green);">${score} / 100</strong>
+                        <div class="score-bar"><div class="score-fill" id="bar-${index}"></div></div>
+                    </td>
+                    <td style="color: var(--text-muted); font-size: 0.8rem;">${cand.Justification}</td>
+                `;
+                tbody.appendChild(row);
+
+                setTimeout(() => {
+                    const fill = document.getElementById(`bar-${index}`);
+                    if (fill) fill.style.width = `${Math.min(100, Math.max(0, score))}%`;
+                }, 100 * index);
+            });
+        } else {
+            document.getElementById('candidate-rows').innerHTML = `<tr><td colspan="5" style="color: #f87171; text-align: center;">⚠️ Run 'python agent.py' first to generate data.</td></tr>`;
+        }
+    }
+    loadDashboard();
+</script>
+
+</body>
+</html>
